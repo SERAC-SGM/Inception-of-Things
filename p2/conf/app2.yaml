@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app2-deployment
+  labels:
+    app: app1
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: app2
+  template:
+    metadata:
+      labels:
+        app: app2
+    spec:
+      containers:
+      - name: app1
+        image: paulbouwer/hello-kubernetes:1
+        ports:
+        - containerPort: 8080
+        env:
+        - name : MESSAGE
+          value: APP2 BIENVENUE
