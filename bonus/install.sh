@@ -13,7 +13,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: 'https://github.com/SERAC-SGM/lletourn-iot'
+    repoURL: 'GITLAB_URL'
     targetRevision: HEAD
     path: . 
   destination:
@@ -35,14 +35,18 @@ ARGOC_PID=$!
 
 ./kubectl port-forward svc/wil-playground -n dev 8888:8888 &>/dev/null &
 PLAYGROUND_PID=$!
-echo -e "wil-playground :\thttp://localhost:8888"
-echo -e "argocd :\t\thttp://localhost:8080\n| user:\t\tadmin\n| password:\t$(./kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)\n\n"
 
+./kubectl port-forward svc/gitlab-webservice-default -n gitlab 9440:8181
+GITLAB_PID=$!
+
+echo -e "wil-playground :\thttp://localhost:8888"
+echo -e "argocd :\t\thttp://localhost:8080\n| user:\t\tadmin\n| password:\t$(./kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)\n"
+echo -e "gitlab :\tGITLAB_URL:PORT\n| user:\t\troot\n| password:\t$(./kubectl get secret --namespace=gitlab gitlab-gitlab-initial-root-password -ojsonpath='{.data.password}' | base64 --decode ; echo)\n\n"
 
 cleanup() {
   echo "Stopping port-forwarding..."
-  kill $ARGOC_PID $PLAYGROUND_PID
-  wait $ARGOC_PID $PLAYGROUND_PID 2>/dev/null
+  kill $ARGOC_PID $PLAYGROUND_PID $GITLAB_PID
+  wait $ARGOC_PID $PLAYGROUND_PID $GITLAB_PID 2>/dev/null
   echo "Port-forwarding stopped."
 }
 
@@ -104,7 +108,15 @@ k3d cluster create $APP --api-port 6550 --port 8081:80
 ./kubectl create namespace dev
 ./kubectl create namespace gitlab
 
-helm install gitlab gitlab/gitlab --namespace gitlab
+./kubectl config set-context --current --namespace=gitlab
+
+helm upgrade --install gitlab gitlab/gitlab \
+    --namespace gitlab \
+    --timeout 600s \
+    --values https://gitlab.com/gitlab-org/charts/gitlab/-/raw/master/examples/values-minikube-minimum.yaml?ref_type=heads \
+    --set global.hosts.domain=localgitlab.com \
+    --set global.hosts.externalIP=0.0.0.0 \
+    --set global.hosts.https=false
 
 ./kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 
@@ -114,5 +126,10 @@ echo -e "\nWaiting for argocd deployment...\n"
 ./kubectl wait --for=condition=available --timeout 60s deployment -l app.kubernetes.io/name=argocd-repo-server -n argocd 
 ./kubectl wait --for=condition=available --timeout 60s deployment -l app.kubernetes.io/name=argocd-application-controller -n argocd 
 
+echo ""
+read -n 1 -s -r -p "Upload your files to gitlab using portforward.sh and press any key to resume..."
+echo ""
+
 ./kubectl apply -f argo-application.yaml
-echo -e "\nargo login:\n  user: admin\n  password: $(./kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)\n\n"
+echo -e "\nargo login:\n  user: admin\n  password: $(./kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)\n"
+echo -e "gitlab login:\n  user: root\n  password: $(./kubectl get secret --namespace=gitlab gitlab-gitlab-initial-root-password -ojsonpath='{.data.password}' | base64 --decode ; echo)\n\n"
