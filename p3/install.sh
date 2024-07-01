@@ -1,7 +1,5 @@
 #!/bin/bash
 
-APP=p3
-
 echo -e "\nCreating scripts...\n"
 
 cat << 'EOF' > argo-application.yaml
@@ -60,7 +58,7 @@ cat << 'SCRIPT' > clean.sh
 
 rm -f kubectl portforward.sh argo-application.yaml 
 
-k3d cluster delete $APP
+k3d cluster delete p3
 
 rm -- "$0"
 SCRIPT
@@ -73,6 +71,7 @@ sudo apt-get install ca-certificates curl -y
 sudo install -m 0755 -d /etc/apt/keyrings
 sudo curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
 sudo chmod a+r /etc/apt/keyrings/docker.asc
+sudo chmod 777 /var/run/docker.sock
 
 # Add the repository to Apt sources:
 echo \
@@ -90,11 +89,10 @@ chmod +x ./kubectl
 wget -q -O - https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
 
 # Cluster creation
-k3d cluster create $APP --api-port 6550 --port 8081:80
+k3d cluster create p3 --api-port 6550 --port 8081:80
 
 ./kubectl create namespace argocd
 ./kubectl create namespace dev
-
 ./kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 
 # Wait for argocd components to be ready
