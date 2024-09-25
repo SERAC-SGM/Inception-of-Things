@@ -6,7 +6,7 @@ There are 4 parts:
 
 [Part 1](https://github.com/SERAC-SGM/Inception-of-Things/tree/main/p1) is about setting up 2 virtual machines using Vagrant, installing k3s in controller mode for the first one and in agent mode for the second one.
 
-[Part 2](https://github.com/SERAC-SGM/Inception-of-Things/tree/main/p2) is about setting up a virtual machine (using Vagrant) running 3 web applications that can be accessed depening on the host header.
+[Part 2](https://github.com/SERAC-SGM/Inception-of-Things/tree/main/p2) is about setting up a virtual machine (using Vagrant) running 3 web applications that can be accessed depending on the host header.
 
 [Part 3](https://github.com/SERAC-SGM/Inception-of-Things/tree/main/p3) is about setting up an infrastructure using k3d containing an app that will be automatically deployed using ArgoCD and a [github repository](https://github.com/SERAC-SGM/lletourn-iot/tree/main).
 
